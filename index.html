@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚡ HyperHub</title>
+
+<style>
+:root{
+    --bg:#000;
+    --accent:#0ff;
+}
+
+body{
+    margin:0;
+    font-family:Arial;
+    background:var(--bg);
+    color:var(--accent);
+    text-align:center;
+}
+
+/* GLOBAL MESSAGE */
+#globalMsg{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    background:#0ff;
+    color:#000;
+    padding:10px;
+    display:none;
+    z-index:9999;
+    font-weight:bold;
+    transition:0.3s;
+}
+
+/* TOPBAR */
+.topbar{
+    position:fixed;
+    top:10px;
+    left:10px;
+}
+
+.settings-btn{
+    background:var(--accent);
+    border:none;
+    padding:10px;
+    border-radius:10px;
+}
+
+/* PANELS */
+.panel{
+    position:fixed;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    background:#111;
+    padding:20px;
+    border-radius:15px;
+    width:300px;
+    display:none;
+    z-index:2000;
+}
+
+.panel-header{
+    font-weight:bold;
+    cursor:grab;
+}
+
+.close-btn{
+    position:absolute;
+    top:10px;
+    right:10px;
+    background:red;
+    border:none;
+    color:white;
+    border-radius:50%;
+    width:30px;
+    height:30px;
+}
+
+/* MENU */
+.screen{display:none;}
+.active{display:block;}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
+    gap:15px;
+    padding:80px 20px;
+}
+
+.card{
+    background:#111;
+    padding:25px;
+    border-radius:15px;
+    cursor:pointer;
+    transition:0.2s;
+}
+
+.card:hover{
+    transform:scale(1.08);
+    box-shadow:0 0 20px var(--accent);
+}
+
+button{
+    background:var(--accent);
+    border:none;
+    padding:10px;
+    border-radius:10px;
+    margin:10px;
+    cursor:pointer;
+}
+
+.reset-btn{
+    background:red;
+    color:white;
+}
+
+iframe{
+    width:100%;
+    height:85vh;
+    border:none;
+}
+</style>
+</head>
+
+<body>
+
+<div id="globalMsg"><span id="msgText"></span></div>
+
+<div class="topbar">
+<button class="settings-btn" onclick="togglePanel('settings')">⚙️</button>
+</div>
+
+<!-- SETTINGS -->
+<div id="settings" class="panel">
+<div class="panel-header">⚙️ Settings</div>
+<button class="close-btn" onclick="togglePanel('settings')">✖</button>
+
+<input type="color" id="bgColor">
+<input type="color" id="accentColor">
+
+<br>
+<button onclick="applySettings()">Apply</button>
+<button class="reset-btn" onclick="resetSettings()">Reset</button>
+
+<br><br>
+<button onclick="togglePanel('adminPanel')">👑 Admin</button>
+</div>
+
+<!-- ADMIN -->
+<div id="adminPanel" class="panel">
+<div class="panel-header">👑 Admin Console</div>
+<button class="close-btn" onclick="togglePanel('adminPanel')">✖</button>
+
+<div id="loginBox">
+<form onsubmit="loginAdmin(); return false;">
+<input type="password" id="adminPass" placeholder="Password">
+<br><br>
+<button type="submit">Login</button>
+</form>
+</div>
+
+<div id="adminBox" style="display:none;">
+<input type="text" id="adminMessage" placeholder="Type message or /command">
+<br><br>
+<button onclick="handleCommand()">Execute</button>
+</div>
+</div>
+
+<!-- MENU -->
+<div id="menu" class="screen active">
+<h1>⚡ HyperHub</h1>
+<div class="grid">
+<div class="card" onclick="openGame('reaction')">🎯 Reaction</div>
+<div class="card" onclick="openGame('memory')">🧠 Memory</div>
+<div class="card" onclick="openGame('sudoku')">🔢 Sudoku</div>
+</div>
+</div>
+
+<!-- GAMES -->
+<div id="reaction" class="screen"><button onclick="back()">⬅</button><iframe src="reaction.html"></iframe></div>
+<div id="memory" class="screen"><button onclick="back()">⬅</button><iframe src="memory.html"></iframe></div>
+<div id="sudoku" class="screen"><button onclick="back()">⬅</button><iframe src="sudoku.html"></iframe></div>
+
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "PASTE",
+  authDomain: "PASTE",
+  databaseURL: "PASTE",
+  projectId: "PASTE",
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+/* NAV */
+function openGame(id){
+document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+document.getElementById(id).classList.add('active');
+}
+function back(){
+document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+document.getElementById('menu').classList.add('active');
+}
+
+/* SETTINGS */
+function togglePanel(id){
+let el=document.getElementById(id);
+el.style.display = (el.style.display==="block")?"none":"block";
+}
+
+function applySettings(){
+document.documentElement.style.setProperty('--bg', bgColor.value);
+document.documentElement.style.setProperty('--accent', accentColor.value);
+}
+
+function resetSettings(){
+localStorage.clear();
+location.reload();
+}
+
+/* ADMIN */
+let isAdmin=false;
+
+function loginAdmin(){
+const pass=document.getElementById("adminPass").value;
+if(pass==="V_I_T_B"){
+isAdmin=true;
+localStorage.setItem("admin","true");
+loginBox.style.display="none";
+adminBox.style.display="block";
+alert("Admin unlocked 👑");
+}else alert("Wrong password");
+}
+
+window.onload=()=>{
+if(localStorage.getItem("admin")==="true"){
+isAdmin=true;
+loginBox.style.display="none";
+adminBox.style.display="block";
+}
+}
+
+/* F2 */
+document.addEventListener("keydown",(e)=>{
+if(e.key==="F2"){
+e.preventDefault();
+togglePanel("adminPanel");
+}
+});
+
+/* DRAG */
+document.querySelectorAll(".panel").forEach(panel=>{
+let down=false,x,y;
+
+const header=panel.querySelector(".panel-header");
+
+header.onmousedown=e=>{
+down=true;
+x=e.clientX-panel.offsetLeft;
+y=e.clientY-panel.offsetTop;
+}
+
+document.onmousemove=e=>{
+if(!down)return;
+panel.style.left=(e.clientX-x)+"px";
+panel.style.top=(e.clientY-y)+"px";
+panel.style.transform="none";
+}
+
+document.onmouseup=()=>down=false;
+
+/* MOBILE */
+header.ontouchstart=e=>{
+down=true;
+x=e.touches[0].clientX-panel.offsetLeft;
+y=e.touches[0].clientY-panel.offsetTop;
+}
+
+document.ontouchmove=e=>{
+if(!down)return;
+panel.style.left=(e.touches[0].clientX-x)+"px";
+panel.style.top=(e.touches[0].clientY-y)+"px";
+}
+document.ontouchend=()=>down=false;
+});
+
+/* COMMAND SYSTEM */
+function handleCommand(){
+let input=document.getElementById("adminMessage").value;
+
+if(input.startsWith("/")){
+let cmd=input.split(" ");
+
+switch(cmd[0]){
+
+case "/clear":
+db.ref("globalMessage").set({text:""});
+break;
+
+case "/rainbow":
+document.body.style.animation="rainbow 2s infinite";
+break;
+
+case "/bg":
+document.documentElement.style.setProperty('--bg', cmd[1]);
+break;
+
+case "/accent":
+document.documentElement.style.setProperty('--accent', cmd[1]);
+break;
+
+case "/announce":
+db.ref("globalMessage").set({text:"📢 "+cmd.slice(1).join(" ")});
+break;
+
+default:
+alert("Unknown command");
+}
+}else{
+db.ref("globalMessage").set({text:"👑 OWNER: "+input});
+}
+}
+
+/* GLOBAL MSG */
+db.ref("globalMessage").on("value",snap=>{
+let data=snap.val();
+if(!data)return;
+
+msgText.textContent=data.text;
+globalMsg.style.display="block";
+
+setTimeout(()=>{
+globalMsg.style.opacity="0";
+setTimeout(()=>globalMsg.style.display="none",1000);
+},3500);
+});
+</script>
+
+<style>
+@keyframes rainbow{
+0%{background:red;}
+25%{background:yellow;}
+50%{background:lime;}
+75%{background:cyan;}
+100%{background:red;}
+}
+</style>
+
+</body>
+</html>
